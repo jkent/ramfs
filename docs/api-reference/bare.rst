@@ -29,7 +29,6 @@ Functions
 .. doxygenfunction:: ramfs_opendir
 .. doxygenfunction:: ramfs_closedir
 .. doxygenfunction:: ramfs_readdir
-.. doxygenfunction:: ramfs_rewinddir
 .. doxygenfunction:: ramfs_seekdir
 .. doxygenfunction:: ramfs_telldir
 .. doxygenfunction:: ramfs_mkdir
