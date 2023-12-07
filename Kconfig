@@ -1,0 +1,18 @@
+menu "RamFS"
+
+config RAMFS_MAX_PARTITIONS
+	int "Max partitions"
+	default 1
+	help
+		This option specifies the number of partitions that can be mounted
+		using VFS at the same time.
+
+config RAMFS_VFS_SUPPORT_DIR
+	bool "Compile in VFS directory functions"
+	default y
+	depends on VFS_SUPPORT_DIR
+	help
+		This includes functions for opendir, readdir, seekdir, telldir, and
+		closedir
+
+endmenu
