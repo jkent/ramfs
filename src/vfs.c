@@ -20,7 +20,7 @@
 # define CONFIG_RAMFS_MAX_PARTITIONS 1
 #endif
 
-#if defined(CONFIG_VFS_SUPPORT_DIR) && defined (CONFIG_RAMFS_VFS_SUPPORT_DIR)
+#if defined(CONFIG_RAMFS_VFS_SUPPORT_DIR)
 typedef struct {
     DIR dir;
     ramfs_dh_t *dh;
@@ -144,6 +144,7 @@ static int ramfs_vfs_fstat(void *ctx, int fd, struct stat *st)
     return 0;
 }
 
+#if defined(CONFIG_RAMFS_VFS_SUPPORT_DIR)
 static int ramfs_vfs_stat(void *ctx, const char *path, struct stat *st)
 {
     ramfs_vfs_t *vfs = (ramfs_vfs_t *) ctx;
@@ -185,7 +186,6 @@ static int ramfs_vfs_rename(void *ctx, const char *src, const char *dst)
     return ramfs_rename(vfs->fs, src, dst);
 }
 
-#if defined(CONFIG_RAMFS_VFS_SUPPORT_DIR)
 static DIR *ramfs_vfs_opendir(void *ctx, const char *path)
 {
     ramfs_vfs_t *vfs = (ramfs_vfs_t *) ctx;
@@ -280,7 +280,6 @@ static int ramfs_vfs_closedir(void *ctx, DIR *pdir)
     dh->dh = NULL;
     return 0;
 }
-#endif
 
 static int ramfs_vfs_access(void *ctx, const char *path, int amode)
 {
@@ -318,6 +317,7 @@ static int ramfs_vfs_ftruncate(void *ctx, int fd, off_t length)
 
     return ramfs_truncate(vfs->fs, entry, length);
 }
+#endif
 
 esp_err_t ramfs_vfs_register(const ramfs_vfs_conf_t *conf)
 {
@@ -333,10 +333,10 @@ esp_err_t ramfs_vfs_register(const ramfs_vfs_conf_t *conf)
         .open_p = &ramfs_vfs_open,
         .close_p = &ramfs_vfs_close,
         .fstat_p = &ramfs_vfs_fstat,
+#ifdef CONFIG_RAMFS_VFS_SUPPORT_DIR
         .stat_p = &ramfs_vfs_stat,
         .unlink_p = &ramfs_vfs_unlink,
         .rename_p = &ramfs_vfs_rename,
-#ifdef CONFIG_VFS_SUPPORT_DIR
         .opendir_p = &ramfs_vfs_opendir,
         .readdir_p = &ramfs_vfs_readdir,
         .readdir_r_p = &ramfs_vfs_readdir_r,
@@ -345,10 +345,10 @@ esp_err_t ramfs_vfs_register(const ramfs_vfs_conf_t *conf)
         .closedir_p = &ramfs_vfs_closedir,
         .mkdir_p = &ramfs_vfs_mkdir,
         .rmdir_p = &ramfs_vfs_rmdir,
-#endif
         .access_p = &ramfs_vfs_access,
         .truncate_p = &ramfs_vfs_truncate,
         .ftruncate_p = &ramfs_vfs_ftruncate,
+#endif
     };
 
     int index;

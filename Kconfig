@@ -12,7 +12,9 @@ config RAMFS_VFS_SUPPORT_DIR
 	default y
 	depends on VFS_SUPPORT_DIR
 	help
-		This includes functions for opendir, readdir, seekdir, telldir, and
-		closedir
+		This option if enabled includes the following VFS functions:
+
+		stat, unlink, rename, opendir, readdir, telldir, seekdir, closedir,
+		mkdir, rmdir, access, truncate, and ftruncate
 
 endmenu
