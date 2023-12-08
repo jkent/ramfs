@@ -2,7 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "log.h"
 #include "ramfs/ramfs.h"
 #include "ramfs/vfs.h"
 
@@ -10,22 +9,15 @@
 #include "esp_vfs.h"
 
 #include <dirent.h>
-#include <errno.h>
-#include <limits.h>
-#include <stdbool.h>
-#include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <sys/ioctl.h>
 #include <sys/fcntl.h>
 #include <sys/stat.h>
 
 
-#define CHUNK_SIZE 1024U
-
 #ifndef CONFIG_RAMFS_MAX_PARTITIONS
-# define CONFIG_RAMFS_MAX_PARTITIONS
+# define CONFIG_RAMFS_MAX_PARTITIONS 1
 #endif
 
 #if defined(CONFIG_VFS_SUPPORT_DIR) && defined (CONFIG_RAMFS_VFS_SUPPORT_DIR)
@@ -45,7 +37,7 @@ typedef struct {
 
 static ramfs_vfs_t *s_ramfs_vfs[CONFIG_RAMFS_MAX_PARTITIONS];
 
-static esp_err_t ramfs_get_emtpy(int *index)
+static esp_err_t ramfs_get_empty(int *index)
 {
     int i;
 
@@ -58,9 +50,9 @@ static esp_err_t ramfs_get_emtpy(int *index)
     return ESP_ERR_NOT_FOUND;
 }
 
-static size_t ramfs_vfs_write(void *ctx, int fd, const void *data, size_t size)
+static ssize_t ramfs_vfs_write(void *ctx, int fd, const void *data, size_t size)
 {
-    ramfs_vfs_t *vfs = (ramfs_vfs_t *vfs) ctx;
+    ramfs_vfs_t *vfs = (ramfs_vfs_t *) ctx;
 
     if (fd < 0 || fd >= vfs->fh_len || vfs->fh[fd] == NULL) {
         return -1;
@@ -71,7 +63,7 @@ static size_t ramfs_vfs_write(void *ctx, int fd, const void *data, size_t size)
 
 static off_t ramfs_vfs_lseek(void *ctx, int fd, off_t offset, int mode)
 {
-    ramfs_vfs_t *vfs = (ramfs_vfs_t *vfs) ctx;
+    ramfs_vfs_t *vfs = (ramfs_vfs_t *) ctx;
 
     if (fd < 0 || fd >= vfs->fh_len || vfs->fh[fd] == NULL) {
         return -1;
@@ -82,7 +74,7 @@ static off_t ramfs_vfs_lseek(void *ctx, int fd, off_t offset, int mode)
 
 static ssize_t ramfs_vfs_read(void *ctx, int fd, void *data, size_t size)
 {
-    ramfs_vfs_t *vfs = (ramfs_vfs_t *vfs) ctx;
+    ramfs_vfs_t *vfs = (ramfs_vfs_t *) ctx;
 
     if (fd < 0 || fd >= vfs->fh_len || vfs->fh[fd] == NULL) {
         return -1;
@@ -93,7 +85,7 @@ static ssize_t ramfs_vfs_read(void *ctx, int fd, void *data, size_t size)
 
 static int ramfs_vfs_open(void *ctx, const char *path, int flags, int mode)
 {
-    ramfs_vfs_t *vfs = (ramfs_vfs_t *vfs) ctx;
+    ramfs_vfs_t *vfs = (ramfs_vfs_t *) ctx;
 
     int fd;
     for (fd = 0; fd < vfs->fh_len; fd++) {
@@ -115,12 +107,12 @@ static int ramfs_vfs_open(void *ctx, const char *path, int flags, int mode)
     }
 
     vfs->fh[fd] = ramfs_open(vfs->fs, entry, flags);
-    return vfs->fh[fd];
+    return fd;
 }
 
 static int ramfs_vfs_close(void *ctx, int fd)
 {
-    ramfs_vfs_t *vfs = (ramfs_vfs_t *vfs) ctx;
+    ramfs_vfs_t *vfs = (ramfs_vfs_t *) ctx;
 
     if (fd < 0 || fd >= vfs->fh_len || vfs->fh[fd] == NULL) {
         return -1;
@@ -133,14 +125,14 @@ static int ramfs_vfs_close(void *ctx, int fd)
 
 static int ramfs_vfs_fstat(void *ctx, int fd, struct stat *st)
 {
-    ramfs_vfs_t *vfs = (ramfs_vfs_t *vfs) ctx;
+    ramfs_vfs_t *vfs = (ramfs_vfs_t *) ctx;
     ramfs_stat_t rst;
 
     if (fd < 0 || fd >= vfs->fh_len || vfs->fh[fd] == NULL) {
         return -1;
     }
 
-    ramfs_stat(vfs->fh[fd]->entry, &rfs);
+    ramfs_stat(vfs->fs, vfs->fh[fd]->entry, &rst);
     memset(st, 0, sizeof(*st));
     st->st_mode = S_IRWXG | S_IRWXG | S_IRWXO;
     st->st_size = rst.size;
@@ -152,9 +144,9 @@ static int ramfs_vfs_fstat(void *ctx, int fd, struct stat *st)
     return 0;
 }
 
-static int ramfs_vfs_stat(void *ctx, const cahr *path, struct stat *st)
+static int ramfs_vfs_stat(void *ctx, const char *path, struct stat *st)
 {
-    ramfs_vfs_t *vfs = (ramfs_vfs_t *vfs) ctx;
+    ramfs_vfs_t *vfs = (ramfs_vfs_t *) ctx;
     ramfs_stat_t rst;
 
     const ramfs_entry_t *entry = ramfs_get_entry(vfs->fs, path);
@@ -162,7 +154,7 @@ static int ramfs_vfs_stat(void *ctx, const cahr *path, struct stat *st)
         return -1;
     }
 
-    ramfs_stat(entry, &rfs);
+    ramfs_stat(vfs->fs, entry, &rst);
     memset(st, 0, sizeof(*st));
     st->st_mode = S_IRWXG | S_IRWXG | S_IRWXO;
     st->st_size = rst.size;
@@ -176,14 +168,9 @@ static int ramfs_vfs_stat(void *ctx, const cahr *path, struct stat *st)
 
 static int ramfs_vfs_unlink(void *ctx, const char *path)
 {
-    ramfs_vfs_t *vfs = (ramfs_vfs_t *vfs) ctx;
-    ramfs_stat_t rst;
+    ramfs_vfs_t *vfs = (ramfs_vfs_t *) ctx;
 
-    if (fd < 0 || fd >= vfs->fh_len || vfs->fh[fd] == NULL) {
-        return -1;
-    }
-
-    const ramfs_entry_t *entry = ramfs_get_entry(vfs->fs, path);
+    ramfs_entry_t *entry = ramfs_get_entry(vfs->fs, path);
     if (entry == NULL) {
         return -1;
     }
@@ -193,7 +180,7 @@ static int ramfs_vfs_unlink(void *ctx, const char *path)
 
 static int ramfs_vfs_rename(void *ctx, const char *src, const char *dst)
 {
-    ramfs_vfs_t *vfs = (ramfs_vfs_t *vfs) ctx;
+    ramfs_vfs_t *vfs = (ramfs_vfs_t *) ctx;
 
     return ramfs_rename(vfs->fs, src, dst);
 }
@@ -201,7 +188,7 @@ static int ramfs_vfs_rename(void *ctx, const char *src, const char *dst)
 #if defined(CONFIG_RAMFS_VFS_SUPPORT_DIR)
 static DIR *ramfs_vfs_opendir(void *ctx, const char *path)
 {
-    ramfs_vfs_t *vfs = (ramfs_vfs_t *vfs) ctx;
+    ramfs_vfs_t *vfs = (ramfs_vfs_t *) ctx;
     ramfs_vfs_dh_t *dh = malloc(sizeof(*dh));
 
     const ramfs_entry_t *entry = ramfs_get_entry(vfs->fs, path);
@@ -217,12 +204,11 @@ static int ramfs_vfs_readdir_r(void *ctx, DIR *pdir, struct dirent *entry,
         struct dirent **out_ent);
 static struct dirent *ramfs_vfs_readdir(void *ctx, DIR *pdir)
 {
-    ramfs_vfs_t *vfs = (ramfs_vfs_t *vfs) ctx;
+    ramfs_vfs_dh_t *dh = (ramfs_vfs_dh_t *) pdir;
     struct dirent *out_ent;
 
     int err = ramfs_vfs_readdir_r(ctx, pdir, &dh->dirent, &out_ent);
     if (err != 0) {
-        errno = err;
         return NULL;
     }
 
@@ -241,7 +227,7 @@ static int ramfs_vfs_readdir_r(void *ctx, DIR *pdir, struct dirent *ent,
     }
 
     ent->d_ino = ramfs_telldir(dh->dh);
-    const char *naem = ramfs_get_name(entry);
+    const char *name = ramfs_get_name(entry);
     strlcpy(ent->d_name, name, sizeof(ent->d_name));
     ent->d_type = DT_UNKNOWN;
     if (ramfs_is_dir(entry)) {
@@ -269,14 +255,14 @@ static void ramfs_vfs_seekdir(void *ctx, DIR *pdir, long offset)
 
 static int ramfs_vfs_mkdir(void *ctx, const char *path, mode_t mode)
 {
-    ramfs_vfs_t *vfs = (ramfs_vfs_t *vfs) ctx;
+    ramfs_vfs_t *vfs = (ramfs_vfs_t *) ctx;
 
     return ramfs_mkdir(vfs->fs, path) != NULL;
 }
 
 static int ramfs_vfs_rmdir(void *ctx, const char *path)
 {
-    ramfs_vfs_t *vfs = (ramfs_vfs_t *vfs) ctx;
+    ramfs_vfs_t *vfs = (ramfs_vfs_t *) ctx;
 
     ramfs_entry_t *entry = ramfs_get_entry(vfs->fs, path);
     if (entry == NULL) {
@@ -285,11 +271,20 @@ static int ramfs_vfs_rmdir(void *ctx, const char *path)
 
     return ramfs_rmdir(entry);
 }
+
+static int ramfs_vfs_closedir(void *ctx, DIR *pdir)
+{
+    ramfs_vfs_dh_t *dh = (ramfs_vfs_dh_t *) pdir;
+
+    ramfs_closedir(dh->dh);
+    dh->dh = NULL;
+    return 0;
+}
 #endif
 
-static ramfs_vfs_access(void *ctx, const char *path, int amode)
+static int ramfs_vfs_access(void *ctx, const char *path, int amode)
 {
-    ramfs_vfs_t *vfs = (ramfs_vfs_t *vfs) ctx;
+    ramfs_vfs_t *vfs = (ramfs_vfs_t *) ctx;
 
     const ramfs_entry_t *entry = ramfs_get_entry(vfs->fs, path);
     if (entry == NULL) {
@@ -301,27 +296,27 @@ static ramfs_vfs_access(void *ctx, const char *path, int amode)
 
 static int ramfs_vfs_truncate(void *ctx, const char *path, off_t length)
 {
-    ramfs_vfs_t *vfs = (ramfs_vfs_t *vfs) ctx;
+    ramfs_vfs_t *vfs = (ramfs_vfs_t *) ctx;
 
-    const ramfs_entry_t *entry = ramfs_get_entry(vfs->fs, path);
+    ramfs_entry_t *entry = ramfs_get_entry(vfs->fs, path);
     if (entry == NULL) {
         return -1;
     }
 
-    return ramfs_truncate(entry, length);
+    return ramfs_truncate(vfs->fs, entry, length);
 }
 
 static int ramfs_vfs_ftruncate(void *ctx, int fd, off_t length)
 {
-    ramfs_vfs_t *vfs = (ramfs_vfs_t *vfs) ctx;
+    ramfs_vfs_t *vfs = (ramfs_vfs_t *) ctx;
 
     if (fd < 0 || fd >= vfs->fh_len || vfs->fh[fd] == NULL) {
         return -1;
     }
 
-    const ramfs_entry_t *entry = vfs->fh[fd]->entry;
+    ramfs_entry_t *entry = vfs->fh[fd]->entry;
 
-    return ramfs_truncate(entry, length);
+    return ramfs_truncate(vfs->fs, entry, length);
 }
 
 esp_err_t ramfs_vfs_register(const ramfs_vfs_conf_t *conf)
@@ -336,10 +331,9 @@ esp_err_t ramfs_vfs_register(const ramfs_vfs_conf_t *conf)
         .lseek_p = &ramfs_vfs_lseek,
         .read_p = &ramfs_vfs_read,
         .open_p = &ramfs_vfs_open,
-        .close_p = &ramfs_vfs_clsoe,
+        .close_p = &ramfs_vfs_close,
         .fstat_p = &ramfs_vfs_fstat,
         .stat_p = &ramfs_vfs_stat,
-        .link_p = &ramfs_vfs_link,
         .unlink_p = &ramfs_vfs_unlink,
         .rename_p = &ramfs_vfs_rename,
 #ifdef CONFIG_VFS_SUPPORT_DIR
@@ -365,7 +359,6 @@ esp_err_t ramfs_vfs_register(const ramfs_vfs_conf_t *conf)
     ramfs_vfs_t *vfs = calloc(1, sizeof(ramfs_vfs_t) +
             (sizeof(ramfs_fh_t) * conf->max_files));
     if (vfs == NULL) {
-        LOGE("vfs could not be alloc'd");
         return ESP_ERR_NO_MEM;
     }
 

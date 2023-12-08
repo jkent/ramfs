@@ -5,7 +5,6 @@
 #include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
@@ -32,7 +31,7 @@ typedef struct ramfs_dir_t {
 
 typedef struct ramfs_file_t {
     ramfs_entry_t entry;
-    uint8_t *data;
+    unsigned char *data;
     size_t size;
 } ramfs_file_t;
 
@@ -269,7 +268,7 @@ int ramfs_is_file(const ramfs_entry_t *entry)
     return entry->type == RAMFS_ENTRY_TYPE_FILE;
 }
 
-void ramfs_stat(const ramfs_fs_t *fs, const ramfs_entry_t *entry,
+void ramfs_stat(ramfs_fs_t *fs, const ramfs_entry_t *entry,
         ramfs_stat_t *st)
 {
     assert(fs != NULL);
@@ -351,7 +350,7 @@ int ramfs_truncate(ramfs_fs_t *fs, ramfs_entry_t *entry, size_t size)
 
     ramfs_file_t *file = (ramfs_file_t *) entry;
 
-    uint8_t *new_data = realloc(file->data, size);
+    unsigned char *new_data = realloc(file->data, size);
     if (new_data == NULL) {
         return -1;
     }
@@ -432,7 +431,7 @@ ssize_t ramfs_write(ramfs_fh_t *fh, const char *buf, size_t len)
 
     if (fh->pos + len > fh->file->size) {
         size_t new_size = fh->pos + len;
-        uint8_t *p = realloc(fh->file->data, new_size);
+        unsigned char *p = realloc(fh->file->data, new_size);
         if (new_size != 0 && p == NULL) {
             return -1;
         }
@@ -605,9 +604,10 @@ const ramfs_entry_t *ramfs_readdir(ramfs_dh_t *dh)
     return NULL;
 }
 
-void ramfs_seekdir(ramfs_dh_t *dh, size_t loc)
+void ramfs_seekdir(ramfs_dh_t *dh, long loc)
 {
     assert(dh != NULL);
+    assert(loc >= 0);
 
     if (loc < dh->dir->children_len) {
         dh->loc = loc;
@@ -616,7 +616,7 @@ void ramfs_seekdir(ramfs_dh_t *dh, size_t loc)
     }
 }
 
-size_t ramfs_telldir(ramfs_dh_t *dh)
+long ramfs_telldir(ramfs_dh_t *dh)
 {
     assert(dh != NULL);
 

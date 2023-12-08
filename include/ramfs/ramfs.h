@@ -11,6 +11,7 @@ extern "C" {
 #include <sys/stat.h>
 #include <sys/types.h>
 
+
 /**
  * \brief       A ramfs filesystem handle
  */
@@ -238,14 +239,14 @@ const ramfs_entry_t *ramfs_readdir(ramfs_dh_t *dh);
  * \param[in]   dh      \a ramfs_dh_t directory handle
  * \param[in]   loc     entry index to seek to
  */
-void ramfs_seekdir(ramfs_dh_t *dh, size_t loc);
+void ramfs_seekdir(ramfs_dh_t *dh, long loc);
 
 /**
  * \brief       Return the current entry index
  * \param[in]   dh      \a ramfs_dh_t directory handle
  * \return              current directory index
  */
-size_t ramfs_telldir(ramfs_dh_t *dh);
+long ramfs_telldir(ramfs_dh_t *dh);
 
 /**
  * \brief       Make a directory
