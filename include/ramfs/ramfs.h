@@ -88,14 +88,15 @@ ramfs_entry_t *ramfs_get_entry(ramfs_fs_t *fs, const char *path);
 /**
  * \brief       Return entry name component
  * \param[in]   entry   \a ramfs_entry_t pointer
- * \return              the entry name string
+ * \return              name string, caller is expected to free
  */
-const char *ramfs_get_name(const ramfs_entry_t *entry);
+char *ramfs_get_name(const ramfs_entry_t *entry);
 
 /**
  * \brief       Get path for ramfs entry
  * \param[in]   entry   \a ramfs_entry_t pointer
- * \return              path string or \a NULL if entry is NULL
+ * \return              full path string or \a NULL if entry is NULL, caller is
+ *                      expected to free
  */
 char *ramfs_get_path(const ramfs_entry_t *entry);
 

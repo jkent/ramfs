@@ -226,9 +226,9 @@ ramfs_entry_t *ramfs_get_entry(ramfs_fs_t *fs, const char *path)
     return parent->children[i];
 }
 
-const char *ramfs_get_name(const ramfs_entry_t *entry)
+char *ramfs_get_name(const ramfs_entry_t *entry)
 {
-    return entry->name;
+    return strdup(entry->name);
 }
 
 char *ramfs_get_path(const ramfs_entry_t *entry)
