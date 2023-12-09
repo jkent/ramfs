@@ -101,9 +101,10 @@ static int ramfs_vfs_open(void *ctx, const char *path, int flags, int mode)
 
     if (entry == NULL && flags & (O_CREAT | O_TRUNC)) {
         entry = ramfs_create(vfs->fs, path, flags);
-        if (entry == NULL) {
-            return -1;
-        }
+    }
+
+    if (entry == NULL) {
+        return -1;
     }
 
     vfs->fh[fd] = ramfs_open(vfs->fs, entry, flags);
