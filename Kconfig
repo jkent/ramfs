@@ -1,5 +1,12 @@
 menu "RamFS"
 
+config RAMFS_USE_RBTREE
+	bool "Use rbtree implementation"
+	default n
+	help
+		This option uses the larger, but theoreticaly faster rbtree ramfs
+		implementtion. Both memory and code footprint are larger.
+
 config RAMFS_MAX_PARTITIONS
 	int "Max partitions"
 	default 1
