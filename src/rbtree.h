@@ -46,6 +46,8 @@
 extern "C" {
 #endif
 
+#include <stdint.h>
+
 /**
  * This structure must be the first member of the data structure in
  * the rbtree.  This allows easy casting between an ramfs_rbnode_t and the
