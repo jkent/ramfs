@@ -180,6 +180,7 @@ ssize_t ramfs_write(ramfs_fh_t *fh, const char *buf, size_t len);
  * \param[in]   fh      \a ramfs_fh_t handle
  * \param[in]   offset  file position (relative or absolute)
  * \param[in]   mode    \a SEEK_SET, SEEK_CUR, or \a SEEK_END
+ * \return              position in file, or -1 on error
  */
 ssize_t ramfs_seek(ramfs_fh_t *fh, off_t offset, int mode);
 

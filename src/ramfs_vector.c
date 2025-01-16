@@ -135,7 +135,7 @@ static ramfs_entry_t *remove(ramfs_entry_t *entry)
         return NULL;
     }
 
-    return remove_index(entry, i);
+    return remove_index(&entry->parent->entry, i);
 }
 
 ramfs_fs_t *ramfs_init(void)
@@ -741,6 +741,8 @@ void ramfs_rmtree(ramfs_entry_t *entry)
             free(dir->children[i]);
         }
     }
-    free((void *) entry->name);
-    free(entry);
+    if (entry->parent != NULL) {
+        free((void *) entry->name);
+        free(entry);
+    }
 }

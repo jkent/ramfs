@@ -1,0 +1,4 @@
+{
+    "C_Cpp.default.compileCommands": "/home/jkent/esp/ramfs/builddir/compile_commands.json",
+    "C_Cpp.default.configurationProvider": "mesonbuild.mesonbuild"
+}

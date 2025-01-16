@@ -612,13 +612,14 @@ int ramfs_rmdir(ramfs_entry_t *entry)
     }
 
     ramfs_dir_t *dir = (ramfs_dir_t *) entry;
+    ramfs_dir_t *parent = entry->parent;
 
     if (dir->rbtree.count > 0) {
         errno = ENOTEMPTY;
         return -1;
     }
 
-    ramfs_rbtree_delete_node(&dir->rbtree, &dir->entry.rbnode);
+    ramfs_rbtree_delete_node(&parent->rbtree, &dir->entry.rbnode);
     free((void *) dir->entry.rbnode.key);
     free(dir);
     return 0;
@@ -633,14 +634,21 @@ void ramfs_rmtree(ramfs_entry_t *entry)
         return;
     }
 
-    ramfs_rbtree_t *rbtree = &entry->parent->rbtree;
-    while ((entry = (ramfs_entry_t *) ramfs_rbtree_last(rbtree)) != NULL) {
-        if (ramfs_is_dir(entry)) {
-            ramfs_rmtree(entry);
+    ramfs_entry_t *child;
+    ramfs_dir_t *dir = (ramfs_dir_t *) entry;
+    ramfs_rbtree_t *rbtree = (ramfs_rbtree_t *) dir->rbtree.root;
+
+    while ((child = (ramfs_entry_t *) ramfs_rbtree_last(rbtree)) != NULL) {
+        if (ramfs_is_dir(child)) {
+            ramfs_rmtree(child);
         } else {
-            free(((ramfs_file_t *) entry)->data);
+            free(((ramfs_file_t *) child)->data);
         }
-        ramfs_rbtree_delete_node(rbtree, &entry->rbnode);
+        ramfs_rbtree_delete_node(rbtree, &child->rbnode);
+        free((void *) child->rbnode.key);
+        free(child);
+    }
+    if (entry->parent != NULL) {
         free((void *) entry->rbnode.key);
         free(entry);
     }

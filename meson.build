@@ -25,3 +25,5 @@ ramfs_dep = declare_dependency(
 )
 
 meson.override_dependency('ramfs', ramfs_dep)
+
+subdir('tests')
