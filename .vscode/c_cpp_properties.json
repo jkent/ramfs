@@ -1,6 +1,20 @@
 {
     "configurations": [
         {
+            "name": "Linux",
+            "includePath": [
+                "${workspaceFolder}/**"
+            ],
+            "defines": [
+                "CONFIG_FREERTOS_HZ=100",
+                "CONFIG_VFS_SUPPORT_DIR=1",
+                "CONFIG_RAMFS_VFS_SUPPORT_DIR=1"
+            ],
+            "cStandard": "c11",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "linux-gcc-x64"
+        },
+        {
             "name": "ESP32",
             "compilerPath": "${config:idf.toolsPath}/tools/xtensa-esp32-elf/esp-12.2.0_20230208/xtensa-esp32-elf/bin/xtensa-esp32-elf-gcc",
             "includePath": [
@@ -23,7 +37,6 @@
                 "limitSymbolsToIncludedHeaders": false
             },
             "defines": [
-                "__DOXYGEN__=y",
                 "CONFIG_FREERTOS_HZ=100",
                 "CONFIG_VFS_SUPPORT_DIR=1",
                 "CONFIG_RAMFS_VFS_SUPPORT_DIR=1"
