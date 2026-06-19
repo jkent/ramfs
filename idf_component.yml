@@ -1,4 +1,4 @@
-version: "git"
+#version: "git"
 description: A memory based file system for embedded use.
 url: https://github.com/jkent/ramfs
 dependencies:

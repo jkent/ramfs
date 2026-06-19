@@ -20,7 +20,9 @@ set(libramfs_INC
 )
 
 if(ESP_PLATFORM)
-    list(APPEND libramfs_SRC
-        ${ramfs_DIR}/src/vfs.c
-    )
+	if(NOT ${target} STREQUAL "linux")
+	    list(APPEND libramfs_SRC
+	        ${ramfs_DIR}/src/vfs.c
+	    )
+	endif()
 endif()

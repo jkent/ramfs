@@ -30,6 +30,13 @@ typedef struct ramfs_vfs_conf_t {
  */
 esp_err_t ramfs_vfs_register(const ramfs_vfs_conf_t *conf);
 
+/**
+ * \brief      Unmount a ramfs handle that was previously mounted with ramfs_vfs_register
+ * \param[in]  conf vfs configuration
+ * \return     ESP_OK if successful, ESP_ERR_INVALID_STATE if the vfs is not mounted
+ */
+esp_err_t ramfs_vfs_unregister(const ramfs_vfs_conf_t *conf);
+
 #ifdef __cplusplus
 } /* extern "C" */
 #endif

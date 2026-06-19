@@ -268,8 +268,9 @@ int ramfs_rmdir(ramfs_entry_t *entry);
 /**
  * \brief       Delete and free a directory tree
  * \param       entry   root entry to remove
+ * \return      0 on success, -1 on error
  */
-void ramfs_rmtree(ramfs_entry_t *entry);
+int ramfs_rmtree(ramfs_entry_t *entry);
 
 #ifdef __cplusplus
 } /* extern "C" */
